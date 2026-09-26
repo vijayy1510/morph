@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>MORPH — pull any picture into 3D</title>
+  <meta name="description" content="Drop any picture and Morph pulls it off the page and into 3D. Pop-out comic panels, particles, holograms, and a case file on who's in it." />
+  <meta name="theme-color" content="#0b0b0f" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' fill='%230b0b0f'/><text x='50' y='76' font-family='Impact' font-size='72' text-anchor='middle' fill='%23e8222e'>M</text></svg>" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo:wght@400;500;700;800&family=Bangers&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.186.1/build/three.module.js",
+        "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.186.1/examples/jsm/"
+      }
+    }
+  </script>
+</head>
+<body>
+  <header class="nav">
+    <a class="wordmark" href="#" id="homeLink" data-site-name>MORPH</a>
+    <nav class="nav-links">
+      <a href="#how" id="howLink">How it works</a>
+      <button class="nav-btn" id="settingsBtn">Settings</button>
+    </nav>
+  </header>
+
+  <main>
+    <!-- ================= LANDING ================= -->
+    <div id="landing">
+      <section class="hero">
+        <div class="hero-copy">
+          <p class="kicker">Vol. 1 &mdash; pictures, but deeper</p>
+          <h1 class="hero-title" data-site-name>MORPH</h1>
+          <p class="caption-box" data-tagline>Drop any picture. We pull it off the page and into 3D.</p>
+
+          <label class="drop" id="dropzone" tabindex="0">
+            <input type="file" id="fileInput" accept="image/*" hidden />
+            <span class="drop-title">Drop a pic</span>
+            <span class="drop-sub">or click to pick one. Pasting with Ctrl+V works too.</span>
+            <span class="drop-meta">JPG / PNG / WEBP &middot; runs on your device</span>
+          </label>
+        </div>
+
+        <div class="hero-art">
+          <div class="comic-page">
+            <button class="sample tall" data-sample="city"><img alt="Night city sample" /><span>Try: night city</span></button>
+            <button class="sample" data-sample="orb"><img alt="Neon orb sample" /><span>Try: the orb</span></button>
+            <button class="sample" data-sample="donut"><img alt="Donut sample" /><span>Try: donut</span></button>
+          </div>
+          <span class="burst" aria-hidden="true">POP!</span>
+        </div>
+      </section>
+
+      <section id="how" class="how">
+        <h2>How it works</h2>
+        <ol class="strip">
+          <li><span class="num">1</span><p class="caption-box small">You drop a picture.</p><p>Any photo, drawing, screenshot or meme. It never leaves your laptop.</p></li>
+          <li><span class="num">2</span><p class="caption-box small">An AI reads the depth.</p><p>A depth model works out how far away every single pixel is.</p></li>
+          <li><span class="num">3</span><p class="caption-box small">The pixels move.</p><p>Close stuff pushes forward, far stuff falls back, and your subject climbs out of the panel.</p></li>
+          <li><span class="num">4</span><p class="caption-box small">We open a case file.</p><p>Who's in it, the colors, the vibe, plus covers and stickers to share.</p></li>
+        </ol>
+      </section>
+    </div>
+
+    <!-- ================= STUDIO ================= -->
+    <section id="studio" class="studio" hidden>
+      <div class="stage-col">
+        <div class="stage" id="stage">
+          <span class="panel-caption" id="panelCaption">Panel 01 &mdash; Pop-out</span>
+          <span class="status" id="depthBadge">Quick depth</span>
+          <div class="stage-tools">
+            <button id="resetBtn" title="Reset view (R)">Reset</button>
+            <button id="fullscreenBtn" title="Fullscreen (F)">Full screen</button>
+          </div>
+          <span class="stage-hint">drag to orbit &middot; scroll to zoom &middot; move your mouse to look around</span>
+        </div>
+
+        <div class="modes" id="modes" role="tablist" aria-label="3D style"></div>
+
+        <div class="deck">
+          <div class="sliders">
+            <label class="slider"><span>Depth <output id="strengthOut">0.60</output></span>
+              <input type="range" id="strength" min="0" max="1.5" step="0.01" value="0.6" /></label>
+            <label class="slider" id="thresholdWrap"><span>Pop-out cut <output id="thresholdOut">0.50</output></span>
+              <input type="range" id="threshold" min="0.05" max="0.95" step="0.01" value="0.5" /></label>
+            <label class="slider"><span>Light <output id="lightOut">0.50</output></span>
+              <input type="range" id="light" min="0" max="1" step="0.01" value="0.5" /></label>
+            <label class="slider"><span>Dot size <output id="pointSizeOut">1.0</output></span>
+              <input type="range" id="pointSize" min="0.3" max="3" step="0.1" value="1" /></label>
+          </div>
+          <div class="toggles">
+            <label class="toggle"><input type="checkbox" id="aiDepthToggle" checked /><span>AI depth</span></label>
+            <label class="toggle"><input type="checkbox" id="aiCutout" checked /><span>AI cut-out</span></label>
+            <label class="toggle"><input type="checkbox" id="motion" checked /><span>Sway</span></label>
+            <label class="toggle"><input type="checkbox" id="xray" /><span>Depth x-ray</span></label>
+            <label class="toggle"><input type="checkbox" id="invert" /><span>Flip depth</span></label>
+            <button class="btn btn-red snap" id="snapBtn" title="Only in Particles">Snap</button>
+          </div>
+        </div>
+
+        <div class="exports">
+          <span class="exports-label">Take it with you</span>
+          <div class="export-btns">
+            <button class="btn" id="coverBtn">Comic cover</button>
+            <button class="btn" id="stickerBtn">Sticker</button>
+            <button class="btn" id="recordBtn">Video clip</button>
+            <button class="btn" id="shotBtn">Screenshot</button>
+            <button class="btn" id="glbBtn">3D file (.glb)</button>
+            <button class="btn btn-paper" id="newBtn">New picture</button>
+          </div>
+        </div>
+
+        <div class="history" id="history" aria-label="Recent pictures"></div>
+      </div>
+
+      <aside class="casefile">
+        <header class="cf-head">
+          <span>Case file</span>
+          <span id="caseNo">No. 0000</span>
+        </header>
+
+        <section class="cf-section">
+          <h3>Who's that?</h3>
+          <div id="whoBox"></div>
+        </section>
+
+        <section class="cf-section">
+          <h3>Deep file <small>by Claude</small></h3>
+          <div id="teaContent"></div>
+        </section>
+
+        <section class="cf-section">
+          <h3>Ink swatches <small>click to copy</small></h3>
+          <div id="palette" class="palette"></div>
+          <div id="meters" class="meters"></div>
+          <div id="vibeCard" class="vibe"></div>
+        </section>
+
+        <section class="cf-section">
+          <h3>The file itself</h3>
+          <div class="preview">
+            <img id="thumb" alt="Your picture" />
+            <p id="fileTitle"></p>
+          </div>
+          <dl id="fileDetails" class="details"></dl>
+        </section>
+      </aside>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <span><b data-site-name>MORPH</b> &copy; <span id="year"></span>. Made with Three.js, Transformers.js and Claude.</span>
+    <span>Not affiliated with Marvel or DC. The colors are just a fan of a certain Brooklyn spider-kid.</span>
+  </footer>
+
+  <dialog id="settingsDialog" class="dialog">
+    <form method="dialog">
+      <h2>Settings</h2>
+      <label class="field">
+        <span>Anthropic API key <small>(only for the Deep file)</small></span>
+        <input type="password" id="apiKey" placeholder="sk-ant-..." autocomplete="off" />
+      </label>
+      <label class="field">
+        <span>Claude model</span>
+        <select id="modelSelect">
+          <option value="claude-opus-5">Claude Opus 5 (best)</option>
+          <option value="claude-sonnet-5">Claude Sonnet 5 (faster, cheaper)</option>
+          <option value="claude-haiku-4-5">Claude Haiku 4.5 (fastest, cheapest)</option>
+        </select>
+      </label>
+      <p class="fineprint">The key is saved only in this browser. That's fine on your own computer. If you put Morph online for other people, move the Claude call to a backend server so the key stays secret.</p>
+      <div class="dialog-actions">
+        <button class="btn" value="clear">Remove key</button>
+        <button class="btn btn-red" value="save">Save</button>
+      </div>
+    </form>
+  </dialog>
+
+  <div class="drop-overlay" id="dropOverlay" hidden><span>Let go!</span></div>
+  <div class="toasts" id="toasts" aria-live="polite"></div>
+
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>
